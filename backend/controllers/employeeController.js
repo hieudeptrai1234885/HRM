@@ -212,3 +212,60 @@ export const getEmployeeByEmail = (req, res) => {
     return res.json(results[0]);
   });
 };
+
+// 📊 Tổng hợp số liệu nhân sự cho dashboard
+export const getEmployeeStats = (req, res) => {
+  const sql = `
+    SELECT 
+      COUNT(*) AS totalEmployees,
+      SUM(
+        CASE 
+          WHEN LOWER(IFNULL(department, '')) LIKE '%design%' 
+            OR LOWER(IFNULL(position, '')) LIKE '%design%' 
+          THEN 1 ELSE 0 
+        END
+      ) AS designEmployees,
+      SUM(
+        CASE 
+          WHEN start_date IS NOT NULL 
+               AND start_date >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) 
+          THEN 1 ELSE 0 
+        END
+      ) AS joinedLast30Days
+    FROM employees
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error("Lỗi tính toán thống kê nhân sự:", err);
+      return res.status(500).json({ error: "Lỗi tính toán thống kê nhân sự" });
+    }
+
+    const stats = result?.[0] || {};
+
+    // Lấy breakdown theo phòng ban
+    const deptSql = `
+      SELECT 
+        COALESCE(NULLIF(TRIM(department), ''), 'Unknown') AS department,
+        COUNT(*) AS total
+      FROM employees
+      GROUP BY COALESCE(NULLIF(TRIM(department), ''), 'Unknown')
+    `;
+
+    db.query(deptSql, (deptErr, deptResult) => {
+      if (deptErr) {
+        console.error("Lỗi tính toán thống kê phòng ban:", deptErr);
+        return res.status(500).json({ error: "Lỗi tính toán thống kê phòng ban" });
+      }
+
+      return res.json({
+        totalEmployees: stats.totalEmployees || 0,
+        designEmployees: stats.designEmployees || 0,
+        joinedLast30Days: stats.joinedLast30Days || 0,
+        onLeaveEmployees: 0, // Có thể cập nhật khi có bảng nghỉ phép
+        newJustifications: 0, // Placeholder cho dữ liệu liên quan tới đơn giải trình
+        departmentBreakdown: deptResult || [],
+      });
+    });
+  });
+};

@@ -1,23 +1,19 @@
 import express from "express";
 import { 
     checkIn, 
-    matchFace, 
-    checkInOrOut, 
-    getWeekAttendance 
+    getWeek,
+    getTodayAttendance
 } from "../controllers/attendanceController.js";
 
 const router = express.Router();
 
-// Ghi điểm danh (time_in)
+// Check-in hoặc Check-out tự động
 router.post("/checkin", checkIn);
 
-// Nhận diện khuôn mặt
-router.post("/match-face", matchFace);
-
-// Check IN hoặc OUT tự động
-router.post("/check", checkInOrOut);
+// Lấy attendance hôm nay
+router.get("/today/:employee_id", getTodayAttendance);
 
 // Lấy lịch 7 ngày
-router.get("/week/:email", getWeekAttendance);
+router.get("/week/:email", getWeek);
 
 export default router;

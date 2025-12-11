@@ -51,9 +51,15 @@ export const login = (req, res) => {
   if (!email || !password)
     return res.status(400).json({ error: "Thiếu email hoặc mật khẩu" });
 
-  // Tìm user theo email
+  // Tìm user theo email - ưu tiên lấy ID từ employees
   const sql = `
-    SELECT u.*, e.full_name, e.department, e.position
+    SELECT 
+      u.*, 
+      e.id as employee_id,
+      e.full_name, 
+      e.department, 
+      e.position,
+      e.role as employee_role
     FROM users u
     LEFT JOIN employees e ON u.email = e.email
     WHERE u.email = ?
@@ -72,16 +78,28 @@ export const login = (req, res) => {
       return res.status(400).json({ error: "Sai mật khẩu" });
     }
 
-    // ⭐ Trả về user info
+    // ⭐ Ưu tiên sử dụng employee_id nếu có, nếu không thì dùng user.id
+    const userId = user.employee_id || user.id;
+    const userRole = user.employee_role || user.role;
+
+    console.log(`🔐 Login thành công:`, {
+      email: user.email,
+      user_id_from_users: user.id,
+      employee_id_from_employees: user.employee_id,
+      final_user_id: userId,
+      role: userRole
+    });
+
+    // ⭐ Trả về user info với ID từ employees (nếu có)
     return res.json({
       success: true,
       user: {
-        id: user.id,
+        id: userId, // Sử dụng employee_id nếu có
         email: user.email,
-        full_name: user.full_name,
+        full_name: user.full_name || user.full_name,
         department: user.department,
         position: user.position,
-        role: user.role
+        role: userRole
       }
     });
   });

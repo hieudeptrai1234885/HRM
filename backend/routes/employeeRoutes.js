@@ -6,6 +6,7 @@ import {
   deleteEmployee,
   findEmployeeByName,
   getEmployeeProfile,
+  getEmployeeStats,
 } from "../controllers/employeeController.js";
 import { getEmployeeByEmail } from "../controllers/employeeController.js";
 
@@ -19,6 +20,9 @@ router.get("/", getEmployees);
 
 // ⭐ ADD EMPLOYEE
 router.post("/add", addEmployee);
+
+// ⭐ THỐNG KÊ NHÂN SỰ
+router.get("/stats", getEmployeeStats);
 
 // ⭐ UPDATE EMPLOYEE
 router.put("/:id", updateEmployee);
